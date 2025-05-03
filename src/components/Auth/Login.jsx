@@ -149,7 +149,7 @@ const Login = () => {
       formData.append("username", email);
       formData.append("password", password);
 
-      const response = await fetch("http://localhost:8000/users/login", {
+      const response = await fetch("https://diagramauml.onrender.com/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",

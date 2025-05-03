@@ -48,7 +48,7 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch("http://localhost:8000/users/login", {
+        const response = await fetch("https://diagramauml.onrender.com/users/login", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
