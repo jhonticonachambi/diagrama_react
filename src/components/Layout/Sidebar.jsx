@@ -1,245 +1,95 @@
-// // src/components/Layout/Sidebar.jsx
-// import { NavLink } from "react-router-dom";
-
-// const Sidebar = () => {
-//   return (
-//     <div className="w-64 bg-gray-800 text-white">
-//       <div className="p-4">
-//         <h2 className="text-xl font-semibold">Menú</h2>
-//       </div>
-//       <nav className="mt-4">
-//         <ul>
-//           <li>
-//             <NavLink 
-//               to="/admin" 
-//               className={({ isActive }) => 
-//                 `block px-4 py-2 hover:bg-gray-700 ${isActive ? 'bg-gray-700' : ''}`
-//               }
-//             >
-//               Dashboard
-//             </NavLink>
-//           </li>
-//           <li>
-//             <NavLink 
-//               to="/admin/diagrama" 
-//               className={({ isActive }) => 
-//                 `block px-4 py-2 hover:bg-gray-700 ${isActive ? 'bg-gray-700' : ''}`
-//               }
-//             >
-//               Diagrama
-//             </NavLink>
-//           </li>
-//           <li>
-//             <NavLink 
-//               to="/admin/usuarios" 
-//               className={({ isActive }) => 
-//                 `block px-4 py-2 hover:bg-gray-700 ${isActive ? 'bg-gray-700' : ''}`
-//               }
-//             >
-//               Usuarios
-//             </NavLink>
-//           </li>
-//           {/* Agrega más enlaces según necesites */}
-//         </ul>
-//       </nav>
-//     </div>
-//   );
-// };
-
-// export default Sidebar;
-
-
-
-
-
 import { NavLink } from "react-router-dom";
-import { FiHome, FiPieChart, FiUsers, FiSettings, FiLogOut, FiChevronDown, FiChevronRight } from "react-icons/fi";
-import { useState } from "react";
+import { useContext } from "react";
+import AuthContext from "../../context/AuthContext";
 
 const Sidebar = () => {
-  const [expandedItems, setExpandedItems] = useState({
-    config: false,
-    reports: false
-  });
+  const { logout } = useContext(AuthContext);
+  const email = localStorage.getItem('userEmail');
 
-  const toggleItem = (item) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [item]: !prev[item]
-    }));
+  const handleLogout = () => {
+    try {
+      logout();
+      localStorage.removeItem('userEmail');
+      console.log("Sesión cerrada correctamente");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
+  // Función para aplicar estilos activos a los enlaces del menú
+  const getNavLinkClass = ({ isActive }) => 
+    `flex items-center px-4 py-2 rounded-md transition-colors ${
+      isActive 
+        ? 'bg-indigo-100 text-indigo-700 font-medium' 
+        : 'text-gray-700 hover:bg-gray-100'
+    }`;
+
   return (
-    <div className="w-72 bg-gradient-to-b from-gray-900 to-gray-800 text-white h-screen flex flex-col border-r border-gray-700">
-      {/* Logo y título */}
-      <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <span className="text-xl font-bold">A</span>
-          </div>
-          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-500">
-            AdminPro
-          </h2>
-        </div>
+    <div className="w-64 bg-white border-r border-gray-200 h-full flex flex-col">
+      {/* Header del sidebar */}
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="text-xl font-bold text-gray-800">UML Generator</h2>
+        <p className="text-sm text-gray-500 mt-1">Panel de administración</p>
       </div>
-
-      {/* Menú principal */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
-        <div className="mb-6">
-          <h3 className="text-xs uppercase tracking-wider text-gray-400 px-4 mb-2">Principal</h3>
-          <ul>
-            <li>
-              <NavLink 
-                to="/admin" 
-                className={({ isActive }) => 
-                  `flex items-center px-4 py-3 rounded-lg transition-all ${isActive ? 'bg-indigo-900/50 text-white border-l-4 border-indigo-500' : 'text-gray-300 hover:bg-gray-800'}`
-                }
-              >
-                <FiHome className="mr-3" />
-                <span>Dashboard</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink 
-                to="/admin/diagrama" 
-                className={({ isActive }) => 
-                  `flex items-center px-4 py-3 rounded-lg transition-all ${isActive ? 'bg-indigo-900/50 text-white border-l-4 border-indigo-500' : 'text-gray-300 hover:bg-gray-800'}`
-                }
-              >
-                <FiPieChart className="mr-3" />
-                <span>Diagramas</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink 
-                to="/admin/colaboracion" 
-                className={({ isActive }) => 
-                  `flex items-center px-4 py-3 rounded-lg transition-all ${isActive ? 'bg-indigo-900/50 text-white border-l-4 border-indigo-500' : 'text-gray-300 hover:bg-gray-800'}`
-                }
-              >
-                <FiUsers className="mr-3" />
-                <span>Colaboracion</span>
-                <span className="ml-auto bg-indigo-500 text-xs px-2 py-1 rounded-full">12</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink 
-                to="/admin/historia" 
-                className={({ isActive }) => 
-                  `flex items-center px-4 py-3 rounded-lg transition-all ${isActive ? 'bg-indigo-900/50 text-white border-l-4 border-indigo-500' : 'text-gray-300 hover:bg-gray-800'}`
-                }
-              >
-                <FiUsers className="mr-3" />
-                <span>Historia</span>
-                <span className="ml-auto bg-indigo-500 text-xs px-2 py-1 rounded-full">12</span>
-              </NavLink>
-            </li>
-          </ul>
-        </div>
-
-        {/* Menú desplegable - Reportes */}
-        <div className="mb-6">
-          <div 
-            className="flex items-center justify-between px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg cursor-pointer"
-            onClick={() => toggleItem('reports')}
-          >
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      
+      {/* Navegación */}
+      <nav className="flex-1 overflow-y-auto p-4">
+        <ul className="space-y-2">
+          <li>
+            <NavLink to="/admin" end className={getNavLinkClass}>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-              <span>Reportes</span>
-            </div>
-            {expandedItems.reports ? <FiChevronDown /> : <FiChevronRight />}
-          </div>
-          {expandedItems.reports && (
-            <ul className="mt-1 ml-8">
-              <li>
-                <NavLink 
-                  to="/admin/historia" 
-                  className={({ isActive }) => 
-                    `flex items-center px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`
-                  }
-                >
-                  Ventas
-                </NavLink>
-              </li>
-              <li>
-                <NavLink 
-                  to="*" 
-                  className={({ isActive }) => 
-                    `flex items-center px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`
-                  }
-                >
-                  Actividad de usuarios
-                </NavLink>
-              </li>
-            </ul>
-          )}
-        </div>
-
-        {/* Configuración */}
-        <div className="mb-6">
-          <div 
-            className="flex items-center justify-between px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg cursor-pointer"
-            onClick={() => toggleItem('config')}
-          >
-            <div className="flex items-center">
-              <FiSettings className="mr-3" />
-              <span>Configuración</span>
-            </div>
-            {expandedItems.config ? <FiChevronDown /> : <FiChevronRight />}
-          </div>
-          {expandedItems.config && (
-            <ul className="mt-1 ml-8">
-              <li>
-                <NavLink 
-                  to="*" 
-                  className={({ isActive }) => 
-                    `flex items-center px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`
-                  }
-                >
-                  Perfil
-                </NavLink>
-              </li>
-              <li>
-                <NavLink 
-                  to="*" 
-                  className={({ isActive }) => 
-                    `flex items-center px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`
-                  }
-                >
-                  Seguridad
-                </NavLink>
-              </li>
-              <li>
-                <NavLink 
-                  to="*" 
-                  className={({ isActive }) => 
-                    `flex items-center px-3 py-2 rounded-lg text-sm transition-all ${isActive ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`
-                  }
-                >
-                  Notificaciones
-                </NavLink>
-              </li>
-            </ul>
-          )}
-        </div>
+              Dashboard
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/admin/diagrama" className={getNavLinkClass}>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Diagramas
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/admin/colaboracion" className={getNavLinkClass}>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Colaboración
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/admin/historia" className={getNavLinkClass}>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Historial
+            </NavLink>
+          </li>
+        </ul>
       </nav>
-
-      {/* Pie de sidebar - Perfil y logout */}
-      <div className="p-4 border-t border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
-            <span className="text-sm font-medium">AD</span>
+      
+      {/* Footer con información de usuario */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
+            {email ? email.charAt(0).toUpperCase() : "U"}
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">Admin User</p>
-            <p className="text-xs text-gray-400">admin@example.com</p>
+          <div>
+            <p className="text-sm font-medium">{email || "Usuario"}</p>
+            <p className="text-xs text-gray-500">Conectado</p>
           </div>
-          <button className="text-gray-400 hover:text-white">
-            <FiLogOut />
-          </button>
         </div>
+        <button 
+          onClick={handleLogout}
+          className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors duration-200 flex items-center justify-center"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Cerrar sesión
+        </button>
       </div>
     </div>
   );

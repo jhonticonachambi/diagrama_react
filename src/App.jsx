@@ -1,13 +1,34 @@
 // src/App.jsx
-import { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
-import { AuthContext } from './context/AuthContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/Auth/Login';
+import Dashboard from './components/Dashboard';
+import PrivateRoute from './components/PrivateRoute';
+import AdminLayout from './components/Layout/AdminLayout';
 
-function App() {
-  const { user } = useContext(AuthContext);
+import DiagramaView from './views/DiagramaView';
+import HistoryView from './views/HistoryView';
+import CollaborationView from './views/CollaborationView';
 
-  // Redirige según el estado de autenticación
-  return user ? <Navigate to="/admin" /> : <Navigate to="/login" />;
-}
+const App = () => (
+  <Routes>
+    <Route path="/" element={<Navigate to="/login" replace />} />
+    <Route path="/login" element={<Login />} />
+    {/* Redirección para compatibilidad con código antiguo */}
+    <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
+    <Route
+      path="/admin"
+      element={
+        <PrivateRoute>
+          <AdminLayout />
+        </PrivateRoute>
+      }
+    >
+      <Route index element={<Dashboard />} />
+      <Route path="diagrama" element={<DiagramaView />} />
+      <Route path="historia" element={<HistoryView />} />
+      <Route path="colaboracion" element={<CollaborationView />} />
+    </Route>
+  </Routes>
+);
 
 export default App;

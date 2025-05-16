@@ -1,430 +1,451 @@
-// // src/views/DiagramaView.jsx
-// import { useContext, useEffect, useState } from "react";
-// import { AuthContext } from "../context/AuthContext";
-// import AdminLayout from "../components/Layout/AdminLayout";
+// UMLViewer.tsx -------------------------------------------------------------------------------------------
+import { useState, useContext, useEffect } from 'react'
+import axios from 'axios'
+import { encode } from 'plantuml-encoder'
+import AuthContext from '../context/AuthContext';
+import { API_ROUTES } from '../config/api';
 
-// const DiagramaView = () => {
-//   const { token } = useContext(AuthContext);
-//   const [userData, setUserData] = useState(null);
-
-//   useEffect(() => {
-//     const fetchUserData = async () => {
-//       try {
-//         const response = await fetch("http://localhost:8000/users/me", {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
-//         const data = await response.json();
-//         setUserData(data);
-//       } catch (err) {
-//         console.error("Error fetching user data:", err);
-//       }
-//     };
-
-//     if (token) fetchUserData();
-//   }, [token]);
-
-//   return (
-//     <AdminLayout userData={userData}>
-//       <div className="p-6">
-//         <h2 className="text-2xl font-bold mb-4">Diagrama</h2>
-//         <div className="bg-white p-6 rounded-lg shadow h-96">
-//           {/* Aquí iría tu componente de diagrama */}
-//           <p>Contenido del diagrama irá aquí</p>
-//           {userData && (
-//             <p className="mt-4 text-sm text-gray-600">
-//               Usuario: {userData.email}
-//             </p>
-//           )}
-//         </div>
-//       </div>
-//     </AdminLayout>
-//   );
-// };
-
-// export default DiagramaView;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// src/views/DiagramaView.jsx
-import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
-import AdminLayout from "../components/Layout/AdminLayout";
-
-// Datos estáticos de ejemplo (simulando la respuesta de la API)
-const staticDiagrams = [
-  {
-    id: "1a2b3c4d-5678-90ef-1234-567890abcdef",
-    name: "Diagrama de Clases Principal",
-    type: "class",
-    language: "python",
-    owner_id: "user-123",
-    created_at: "2023-05-15T10:30:00Z",
-    updated_at: "2023-05-16T14:45:00Z",
-    plantuml_code: "@startuml\nclass Car {\n  -String model\n  -int year\n  +startEngine()\n}\n@enduml",
-    collaborators: ["user-456", "user-789"],
-    elements: [
-      {
-        id: "elem-1",
-        type: "class",
-        content: "Car",
-        meta: { attributes: ["-String model", "-int year"], methods: ["+startEngine()"] }
-      }
-    ],
-    comments: [
-      {
-        id: "comment-1",
-        author_id: "user-456",
-        text: "¿Deberíamos añadir una clase Engine?",
-        created_at: "2023-05-15T11:20:00Z"
-      }
-    ],
-    versions: [
-      {
-        id: "version-1",
-        created_at: "2023-05-15T10:30:00Z",
-        snapshot: "Versión inicial del diagrama"
-      }
-    ]
-  }
-];
-
-// Funciones estáticas que simulan la API
-const DiagramService = {
-  getDiagrams: async (token) => {
-    console.log("Simulando llamada a API para obtener diagramas");
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay de red
-    return staticDiagrams;
-  },
+export default function UMLViewer() {
+  // Estado para el código y generación de diagramas
+  const [inputCode, setInputCode] = useState('public class Persona { public string Nombre { get; set; } }')
+  const [language, setLanguage] = useState('csharp')
+  const [diagramType, setDiagramType] = useState('class')
+  const [uml, setUml] = useState('')
+  const [src, setSrc] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   
-  createDiagram: async (token, diagramData) => {
-    console.log("Simulando creación de diagrama:", diagramData);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const newDiagram = {
-      ...diagramData,
-      id: `new-${Math.random().toString(36).substr(2, 9)}`,
-      owner_id: "current-user",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      collaborators: [],
-      elements: [],
-      comments: [],
-      versions: []
-    };
-    staticDiagrams.push(newDiagram);
-    return newDiagram;
-  },
+  // Estado para el manejo de proyectos
+  const [projects, setProjects] = useState([])
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   
-  updateDiagram: async (token, diagramId, updates) => {
-    console.log("Simulando actualización de diagrama:", diagramId, updates);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const index = staticDiagrams.findIndex(d => d.id === diagramId);
-    if (index === -1) throw new Error("Diagrama no encontrado");
-    
-    const updatedDiagram = {
-      ...staticDiagrams[index],
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-    staticDiagrams[index] = updatedDiagram;
-    return updatedDiagram;
-  },
-  
-  deleteDiagram: async (token, diagramId) => {
-    console.log("Simulando eliminación de diagrama:", diagramId);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const index = staticDiagrams.findIndex(d => d.id === diagramId);
-    if (index === -1) throw new Error("Diagrama no encontrado");
-    
-    staticDiagrams.splice(index, 1);
-    return { success: true };
-  }
-};
-
-const DiagramaView = () => {
   const { token } = useContext(AuthContext);
-  const [userData, setUserData] = useState(null);
-  const [diagrams, setDiagrams] = useState([]);
-  const [selectedDiagram, setSelectedDiagram] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Cargar datos del usuario y diagramas
+  // Cargar la lista de proyectos al montar el componente
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Simular carga de datos del usuario
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setUserData({ email: "usuario@premium.com", name: "Usuario Premium" });
-        
-        // Cargar diagramas
-        const diagramsData = await DiagramService.getDiagrams(token);
-        setDiagrams(diagramsData);
-        if (diagramsData.length > 0) {
-          setSelectedDiagram(diagramsData[0]);
+    fetchProjects();
+  }, []);
+
+  // Función para obtener la lista de proyectos
+  const fetchProjects = async () => {
+    try {
+      setIsLoadingProjects(true);
+      setError('');
+      
+      console.log('Obteniendo proyectos con token:', token);
+      
+      const response = await axios.get(
+        API_ROUTES.PROYECTOS, 
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (token) loadData();
-  }, [token]);
-
-  // Manejadores para las acciones CRUD
-  const handleCreateDiagram = async () => {
-    try {
-      setIsLoading(true);
-      const newDiagram = await DiagramService.createDiagram(token, {
-        name: "Nuevo Diagrama",
-        type: "class",
-        language: "python",
-        source_code: "# Código inicial"
-      });
-      setDiagrams([...diagrams, newDiagram]);
-      setSelectedDiagram(newDiagram);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateDiagram = async (updates) => {
-    if (!selectedDiagram) return;
-    
-    try {
-      setIsLoading(true);
-      const updated = await DiagramService.updateDiagram(
-        token, 
-        selectedDiagram.id, 
-        updates
       );
-      setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
-      setSelectedDiagram(updated);
-    } catch (err) {
-      setError(err.message);
+      
+      // Depurar la respuesta completa
+      console.log('Respuesta completa de proyectos:', response);
+      console.log('Datos de proyectos:', response.data);
+      
+      // Determinar la estructura de los datos recibidos
+      let projectsData = response.data;
+      
+      // Si la respuesta tiene una propiedad específica donde están los proyectos
+      if (response.data && response.data.proyectos) {
+        projectsData = response.data.proyectos;
+      }
+      
+      // Si la API devuelve un objeto en lugar de un array
+      if (projectsData && !Array.isArray(projectsData) && typeof projectsData === 'object') {
+        projectsData = Object.values(projectsData);
+      }
+      
+      if (Array.isArray(projectsData) && projectsData.length > 0) {
+        console.log('Proyectos encontrados:', projectsData.length);
+        setProjects(projectsData);
+        // Seleccionar el primer proyecto por defecto
+        setSelectedProjectId(projectsData[0].id);
+      } else {
+        console.log('No se encontraron proyectos o el formato no es el esperado');
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error('Error al obtener proyectos:', error);
+      console.error('Detalles del error:', error.response?.data);
+      setError('Error al cargar la lista de proyectos: ' + (error.message || 'Desconocido'));
+      setProjects([]);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
+
+  // Función para crear un nuevo proyecto
+  const createProject = async () => {
+    try {
+      if (!newProjectName.trim()) {
+        setError('El nombre del proyecto no puede estar vacío');
+        return;
+      }
+      
+      setIsLoading(true);
+      const response = await axios.post(
+        API_ROUTES.CREAR_PROYECTO,
+        {
+          nombre: newProjectName,
+          user_id: localStorage.getItem('userId') || '3fe2b3ab-740a-4883-a291-834d43e2da1f'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      console.log('Proyecto creado:', response.data);
+      
+      // Cerrar el modal y limpiar el nombre
+      setShowModal(false);
+      setNewProjectName('');
+      
+      // Recargar la lista de proyectos
+      fetchProjects();
+      
+      return response.data.id;
+    } catch (error) {
+      console.error('Error al crear el proyecto:', error);
+      console.error('Detalles del error:', error.response?.data);
+      setError('Error al crear el proyecto: ' + (error.message || 'Desconocido'));
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteDiagram = async () => {
-    if (!selectedDiagram) return;
-    
+  // Función para crear un proyecto de ejemplo
+  const createExampleProject = async () => {
     try {
       setIsLoading(true);
-      await DiagramService.deleteDiagram(token, selectedDiagram.id);
-      setDiagrams(diagrams.filter(d => d.id !== selectedDiagram.id));
-      setSelectedDiagram(diagrams.length > 1 ? diagrams[0] : null);
-    } catch (err) {
-      setError(err.message);
+      setError('');
+      
+      const response = await axios.post(
+        API_ROUTES.CREAR_PROYECTO,
+        {
+          nombre: "Proyecto de prueba " + new Date().toLocaleTimeString(),
+          user_id: localStorage.getItem('userId') || '3fe2b3ab-740a-4883-a291-834d43e2da1f'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('Proyecto de ejemplo creado:', response.data);
+      fetchProjects();
+      return response.data.id;
+    } catch (error) {
+      console.error('Error al crear proyecto de ejemplo:', error);
+      console.error('Detalles del error:', error.response?.data);
+      setError('Error al crear proyecto de ejemplo: ' + (error.message || 'Desconocido'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  // Función para generar el diagrama UML
+  const handleGenerateDiagram = async () => {
+    try {
+      if (!selectedProjectId) {
+        setError('Por favor, selecciona un proyecto primero');
+        return;
+      }
+      
+      setIsLoading(true);
+      setError('');
+      
+      console.log('Datos enviados para generar diagrama:', {
+        proyecto_id: selectedProjectId,
+        codigo: inputCode,
+        lenguaje: language,
+        diagramas: [diagramType]
+      });
+
+      // Generar el diagrama con el ID del proyecto seleccionado
+      const response = await axios.post(
+        API_ROUTES.GENERAR_DIAGRAMA,
+        {
+          proyecto_id: selectedProjectId,
+          codigo: inputCode,
+          lenguaje: language,
+          diagramas: [diagramType]
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('Respuesta del servidor:', response.data);
+
+      // La estructura real es {success: true, data: [{ contenido_plantuml: "..." }]}
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        // Buscar el diagrama del tipo solicitado en el array de datos
+        const diagrama = response.data.data.find(item => 
+          item.nombre?.toLowerCase().includes(diagramType) || 
+          item.tipo === diagramType
+        );
+        
+        if (diagrama && diagrama.contenido_plantuml) {
+          const raw = diagrama.contenido_plantuml;
+          setUml(raw);
+
+          if (!raw.includes('@startuml') || !raw.includes('@enduml')) {
+            throw new Error('El UML recibido no es válido');
+          }
+
+          const encoded = encode(raw);
+          setSrc(`https://www.plantuml.com/plantuml/svg/${encoded}`);
+        } else {
+          throw new Error(`No se encontró un diagrama de tipo "${diagramType}" en la respuesta`);
+        }
+      } else {
+        throw new Error('La respuesta del servidor no tiene el formato esperado');
+      }
+    } catch (error) {
+      console.error('Error al generar UML:', error);
+      console.error('Detalles del error:', error.response?.data);
+      setError(`Error al generar el diagrama: ${error.message || 'Verifica la consola para más detalles'}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <AdminLayout userData={userData}>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">Diagramas UML</h2>
-          <button
-            onClick={handleCreateDiagram}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Nuevo Diagrama
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-            <p>{error}</p>
+  // Modal para crear un nuevo proyecto
+  const ProjectModal = () => {
+    if (!showModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+          <h2 className="text-xl font-bold mb-4">Crear Nuevo Proyecto</h2>
+          
+          <div className="mb-4">
+            <label htmlFor="new-project-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre del Proyecto:
+            </label>
+            <input
+              id="new-project-name"
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              className="w-full border border-gray-300 rounded-md p-2"
+              placeholder="Ingresa el nombre del proyecto"
+            />
           </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Lista de diagramas */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-medium text-gray-800">Mis Diagramas</h3>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {isLoading && diagrams.length === 0 ? (
-                <div className="p-4 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                </div>
-              ) : diagrams.length === 0 ? (
-                <p className="p-4 text-gray-500">No hay diagramas creados</p>
-              ) : (
-                diagrams.map(diagram => (
-                  <div 
-                    key={diagram.id}
-                    onClick={() => setSelectedDiagram(diagram)}
-                    className={`p-4 cursor-pointer transition-colors ${selectedDiagram?.id === diagram.id ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
-                  >
-                    <h4 className="font-medium text-gray-800">{diagram.name}</h4>
-                    <div className="flex items-center mt-1 text-sm text-gray-500">
-                      <span className={`px-2 py-1 rounded-full text-xs ${diagram.type === 'class' ? 'bg-blue-100 text-blue-800' : diagram.type === 'sequence' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
-                        {diagram.type}
-                      </span>
-                      <span className="ml-2">{new Date(diagram.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Editor de diagrama */}
-          <div className="lg:col-span-2 space-y-6">
-            {selectedDiagram ? (
-              <>
-                <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 className="text-lg font-medium text-gray-800">{selectedDiagram.name}</h3>
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => handleUpdateDiagram({ name: `${selectedDiagram.name} (editado)` })}
-                        className="text-gray-600 hover:text-indigo-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                        title="Guardar"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={handleDeleteDiagram}
-                        className="text-gray-600 hover:text-red-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                        title="Eliminar"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Diagrama</label>
-                      <div className="flex space-x-2">
-                        {Object.entries({
-                          class: "Clases",
-                          sequence: "Secuencia",
-                          use_case: "Casos de Uso",
-                          component: "Componentes"
-                        }).map(([value, label]) => (
-                          <button
-                            key={value}
-                            onClick={() => handleUpdateDiagram({ type: value })}
-                            className={`px-3 py-1 text-sm rounded-md ${selectedDiagram.type === value ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lenguaje</label>
-                      <div className="flex space-x-2">
-                        {['python', 'java', 'csharp', 'php'].map(lang => (
-                          <button
-                            key={lang}
-                            onClick={() => handleUpdateDiagram({ language: lang })}
-                            className={`px-3 py-1 text-sm rounded-md ${selectedDiagram.language === lang ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                          >
-                            {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Código Fuente</label>
-                      <textarea
-                        value={selectedDiagram.source_code || ''}
-                        onChange={(e) => handleUpdateDiagram({ source_code: e.target.value })}
-                        className="w-full h-32 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="Escribe tu código aquí..."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vista previa del diagrama */}
-                <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 bg-gray-50">
-                    <h3 className="text-lg font-medium text-gray-800">Vista Previa</h3>
-                  </div>
-                  <div className="p-6">
-                    {selectedDiagram.plantuml_code ? (
-                      <div className="bg-gray-100 p-4 rounded-md">
-                        <pre className="text-sm text-gray-800 overflow-x-auto">
-                          {selectedDiagram.plantuml_code}
-                        </pre>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-32 bg-gray-50 rounded-md border-2 border-dashed border-gray-300 text-gray-400">
-                        <p>Genera tu diagrama para ver la vista previa</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                <div className="p-8 text-center">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                  <h3 className="mt-2 text-lg font-medium text-gray-900">Selecciona o crea un diagrama</h3>
-                  <p className="mt-1 text-sm text-gray-500">Empieza visualizando tus modelos UML de manera profesional.</p>
-                  <div className="mt-6">
-                    <button
-                      onClick={handleCreateDiagram}
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Nuevo Diagrama
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+          
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={createProject}
+              disabled={isLoading}
+              className={`px-4 py-2 rounded-md text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+            >
+              {isLoading ? 'Creando...' : 'Crear Proyecto'}
+            </button>
           </div>
         </div>
       </div>
-    </AdminLayout>
-  );
-};
+    );
+  };
 
-export default DiagramaView;
+  return (
+    <div className="p-4 space-y-4 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold text-center mb-6">Generador de Diagramas UML</h1>
+      
+      {/* Sección de Proyectos */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Proyectos</h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={fetchProjects}
+              disabled={isLoadingProjects}
+              className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              {isLoadingProjects ? 'Cargando...' : 'Recargar'}
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              Crear Proyecto
+            </button>
+          </div>
+        </div>
+        
+        {isLoadingProjects ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : projects.length === 0 ? (
+          <div>
+            <p className="text-gray-500 py-2 mb-3">No hay proyectos disponibles.</p>
+            <button
+              onClick={createExampleProject}
+              className="px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+            >
+              Crear Proyecto de Ejemplo
+            </button>
+            <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
+              <p className="text-sm text-gray-600">Información de depuración:</p>
+              <p className="text-xs text-gray-500 mt-1">- Token presente: {token ? 'Sí' : 'No'}</p>
+              <p className="text-xs text-gray-500">- URL API: {import.meta.env.VITE_API_BASE_URL}/api/proyectos</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {projects.map(project => (
+              <div 
+                key={project.id || 'sin-id'}
+                onClick={() => setSelectedProjectId(project.id)}
+                className={`p-3 border rounded-md cursor-pointer transition-colors ${
+                  selectedProjectId === project.id 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">{project.nombre || 'Proyecto sin nombre'}</h3>
+                    {/* <p className="text-sm text-gray-500">ID: {project.id || 'Sin ID'}</p> */}
+                  </div>
+                  {selectedProjectId === project.id && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                      Seleccionado
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Configuración del Diagrama */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Configuración del Diagrama</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Selector de Lenguaje */}
+          <div className="space-y-2">
+            <label htmlFor="language-select" className="block text-sm font-medium text-gray-700">
+              Lenguaje:
+            </label>
+            <select
+              id="language-select"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full border border-gray-300 rounded-md p-2"
+            >
+              <option value="csharp">C#</option>
+              <option value="java">Java</option>
+              <option value="python">Python</option>
+            </select>
+          </div>
+
+          {/* Selector de Tipo de Diagrama */}
+          <div className="space-y-2">
+            <label htmlFor="diagram-select" className="block text-sm font-medium text-gray-700">
+              Tipo de Diagrama:
+            </label>
+            <select
+              id="diagram-select"
+              value={diagramType}
+              onChange={(e) => setDiagramType(e.target.value)}
+              className="w-full border border-gray-300 rounded-md p-2"
+            >
+              <option value="class">Clases</option>
+              <option value="sequence">Secuencia</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Área de Código */}
+        <div className="space-y-2 mb-4">
+          <label htmlFor="code-input" className="block text-sm font-medium text-gray-700">
+            Ingresa tu código:
+          </label>
+          <textarea
+            id="code-input"
+            value={inputCode}
+            onChange={(e) => setInputCode(e.target.value)}
+            rows={8}
+            className="w-full border border-gray-300 rounded-md p-2 font-mono text-sm"
+            placeholder="Pega aquí tu código (ej: public class Persona { public string Nombre { get; set; } })"
+          />
+        </div>
+
+        <button
+          onClick={handleGenerateDiagram}
+          disabled={isLoading || !selectedProjectId}
+          className={`px-4 py-2 rounded-md text-white ${
+            isLoading || !selectedProjectId 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {isLoading ? 'Generando...' : 'Generar Diagrama UML'}
+        </button>
+        {!selectedProjectId && (
+          <p className="text-sm text-red-500 mt-2">Selecciona un proyecto primero</p>
+        )}
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Diagrama Generado */}
+      {src && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-4">Diagrama Generado:</h2>
+          <div className="border rounded-md p-2 bg-white">
+            <img 
+              src={src} 
+              alt="Diagrama UML" 
+              className="mx-auto" 
+              onError={() => setError('Error al cargar el diagrama. Verifica el código generado.')}
+            />
+          </div>
+          
+          {uml && (
+            <div className="mt-4 space-y-2">
+              <h3 className="text-lg font-semibold">Código PlantUML Generado:</h3>
+              <textarea
+                value={uml}
+                readOnly
+                rows={10}
+                className="w-full border border-gray-300 rounded-md p-2 font-mono text-sm bg-gray-50"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal para crear proyecto */}
+      <ProjectModal />
+    </div>
+  )
+}
