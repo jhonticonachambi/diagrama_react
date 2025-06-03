@@ -128,13 +128,24 @@ export const AuthProvider = ({ children }) => {
         }
       });
       
-      return { success: true };
-    } catch (error) {
-      console.error('Error de login:', error.response?.data);
+      return { success: true };    } catch (error) {
+      console.error('Error de login completo:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL
+        }
+      });
       
       let errorMessage = 'Error de autenticación';
       
-      if (error.response?.data) {
+      // Manejar errores de red
+      if (!error.response) {
+        errorMessage = 'Error de conexión. Verifica tu conexión a internet y que el servidor esté disponible.';
+      } else if (error.response?.data) {
         const errorData = error.response.data;
         
         if (error.response.status === 422 && errorData.detail) {
@@ -148,6 +159,8 @@ export const AuthProvider = ({ children }) => {
         } else if (errorData.message) {
           errorMessage = errorData.message;
         }
+      } else {
+        errorMessage = `Error ${error.response.status}: ${error.response.statusText}`;
       }
       
       dispatch({ type: 'AUTH_ERROR', payload: errorMessage });

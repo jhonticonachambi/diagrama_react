@@ -1,10 +1,9 @@
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import ENV from '../config/environment.js';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
+  baseURL: `${ENV.API_BASE_URL}/api`,
+  timeout: ENV.API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,6 +12,7 @@ const api = axios.create({
 // Request interceptor para agregar token
 api.interceptors.request.use(
   (config) => {
+    console.log('Request interceptor - URL:', `${config.baseURL}${config.url}`);
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -20,6 +20,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Error en request interceptor:', error);
     return Promise.reject(error);
   }
 );
@@ -28,6 +29,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('Error en interceptor de response:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL
+      }
+    });
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('userEmail');
