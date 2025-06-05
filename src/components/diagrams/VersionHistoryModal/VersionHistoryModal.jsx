@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import { diagramService } from '../../../services/diagramService'
 import Button from '../../common/Button/Button'
+import ViewVersionModal from '../ViewVersionModal/ViewVersionModal'
 
 const VersionHistoryModal = ({ isOpen, onClose, diagramId, diagramName }) => {
   const [versions, setVersions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isRestoring, setIsRestoring] = useState(null) // ID de la versión que se está restaurando
+  
+  // Estados para el modal de vista de versión
+  const [showViewVersionModal, setShowViewVersionModal] = useState(false)
+  const [selectedVersion, setSelectedVersion] = useState(null)
 
   // Cargar versiones cuando se abre el modal
   useEffect(() => {
@@ -51,23 +56,9 @@ const VersionHistoryModal = ({ isOpen, onClose, diagramId, diagramName }) => {
       return "Fecha inválida"
     }
   }
-
   const handleViewVersion = async (versionNumber) => {
-    try {
-      const versionData = await diagramService.getDiagramVersion(diagramId, versionNumber)
-      
-      // Abrir en una nueva pestaña o mostrar en un modal
-      // Por ahora, mostraremos el código en una alerta (se puede mejorar)
-      const plantUmlUrl = diagramService.generatePlantUmlImageUrl(versionData.contenido_original)
-      
-      if (plantUmlUrl) {
-        window.open(plantUmlUrl, '_blank')
-      } else {
-        alert(`Contenido de la versión ${versionNumber}:\n\n${versionData.contenido_original}`)
-      }
-    } catch (err) {
-      setError(`Error al ver la versión: ${err.message}`)
-    }
+    setSelectedVersion(versionNumber)
+    setShowViewVersionModal(true)
   }
 
   const handleRestoreVersion = async (versionNumber) => {
@@ -255,9 +246,17 @@ const VersionHistoryModal = ({ isOpen, onClose, diagramId, diagramName }) => {
             onClick={onClose}
           >
             Cerrar
-          </Button>
-        </div>
+          </Button>        </div>
       </div>
+
+      {/* Modal de vista de versión */}
+      <ViewVersionModal
+        isOpen={showViewVersionModal}
+        onClose={() => setShowViewVersionModal(false)}
+        diagramId={diagramId}
+        versionNumber={selectedVersion}
+        diagramName={diagramName}
+      />
     </div>
   )
 }

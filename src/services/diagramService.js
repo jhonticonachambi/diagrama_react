@@ -1,4 +1,5 @@
 import api from './api'
+import { encode } from 'plantuml-encoder'
 
 class DiagramService {
   /**
@@ -127,9 +128,7 @@ class DiagramService {
       console.error('Error eliminando diagrama:', error)
       throw new Error(error.response?.data?.detail || 'Error al eliminar el diagrama')
     }
-  }
-
-  /**
+  }  /**
    * Genera la URL de imagen SVG de PlantUML
    * @param {string} plantUmlCode - Código PlantUML
    * @returns {string} URL de la imagen
@@ -138,8 +137,8 @@ class DiagramService {
     if (!plantUmlCode) return null
 
     try {
-      // Codificar el código PlantUML para URL
-      const encoded = btoa(unescape(encodeURIComponent(plantUmlCode)))
+      // Usar la función encode de plantuml-encoder
+      const encoded = encode(plantUmlCode)
       return `https://www.plantuml.com/plantuml/svg/${encoded}`
     } catch (error) {
       console.error('Error generando URL de PlantUML:', error)
