@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { diagramService } from '../../../services/diagramService'
 import Button from '../../common/Button/Button'
 import ViewDiagramModal from '../ViewDiagramModal/ViewDiagramModal'
+import EditDiagramModal from '../EditDiagramModal/EditDiagramModal'
 
-const DiagramCard = ({ diagram, onDiagramUpdated, onDiagramDeleted, userRole }) => {
-  const [isExpanded, setIsExpanded] = useState(false)
+const DiagramCard = ({ diagram, onDiagramUpdated, onDiagramDeleted, userRole }) => {  const [isExpanded, setIsExpanded] = useState(false)
   const [imageUrl, setImageUrl] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   const canEdit = userRole === 'Propietario' || userRole === 'Editor'
 
@@ -75,7 +76,18 @@ const DiagramCard = ({ diagram, onDiagramUpdated, onDiagramDeleted, userRole }) 
     } finally {
       setIsLoading(false)
     }
-  };  return (
+  }
+
+  const handleEdit = () => {
+    setShowEditModal(true)
+    setIsMenuOpen(false)
+    setError(null)
+  }
+  const handleDiagramUpdated = (updatedDiagram) => {
+    onDiagramUpdated?.(updatedDiagram)
+  }
+
+  return (
     <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col h-64 w-full min-w-0 overflow-hidden">
       {/* Botón de menú en la esquina superior derecha */}
       <div className="absolute top-2 right-2">
@@ -100,14 +112,18 @@ const DiagramCard = ({ diagram, onDiagramUpdated, onDiagramDeleted, userRole }) 
               />
             </svg>
           </button>
-          {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+          {isMenuOpen && (            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               <ul className="py-1">
-                <li>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Editar
-                  </button>
-                </li>
+                {canEdit && (
+                  <li>
+                    <button
+                      onClick={handleEdit}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Editar
+                    </button>
+                  </li>
+                )}
                 <li>
                   <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Ver versiones
@@ -165,6 +181,16 @@ const DiagramCard = ({ diagram, onDiagramUpdated, onDiagramDeleted, userRole }) 
           isOpen={showViewModal}
           onClose={() => setShowViewModal(false)}
           diagramId={diagram.id}
+        />
+      )}
+
+      {/* Modal para editar diagrama */}
+      {showEditModal && (
+        <EditDiagramModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          diagram={diagram}
+          onDiagramUpdated={handleDiagramUpdated}
         />
       )}
     </div>
