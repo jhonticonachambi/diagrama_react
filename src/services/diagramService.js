@@ -161,6 +161,96 @@ class DiagramService {
 
     return hasStart && hasEnd
   }
+
+  /**
+   * Obtiene información de la próxima versión de un diagrama
+   * @param {string} diagramaId - ID del diagrama
+   * @returns {Promise<Object>} Información de versión
+   */
+  async getNextVersionInfo(diagramaId) {
+    try {
+      console.log('Obteniendo info de próxima versión:', diagramaId)
+      const response = await api.get(`/diagramas/${diagramaId}/proxima-version`)
+      return response.data
+    } catch (error) {
+      console.error('Error obteniendo info de próxima versión:', error)
+      throw new Error(error.response?.data?.detail || 'Error al obtener información de versión')
+    }
+  }
+
+  /**
+   * Obtiene todas las versiones de un diagrama
+   * @param {string} diagramaId - ID del diagrama
+   * @returns {Promise<Array>} Lista de versiones
+   */
+  async getDiagramVersions(diagramaId) {
+    try {
+      console.log('Obteniendo versiones del diagrama:', diagramaId)
+      const response = await api.get(`/diagramas/${diagramaId}/versiones`)
+      return response.data
+    } catch (error) {
+      console.error('Error obteniendo versiones:', error)
+      throw new Error(error.response?.data?.detail || 'Error al obtener las versiones')
+    }
+  }
+
+  /**
+   * Obtiene una versión específica de un diagrama
+   * @param {string} diagramaId - ID del diagrama
+   * @param {number} versionNumber - Número de versión
+   * @returns {Promise<Object>} Datos de la versión específica
+   */
+  async getDiagramVersion(diagramaId, versionNumber) {
+    try {
+      console.log('Obteniendo versión específica:', diagramaId, versionNumber)
+      const response = await api.get(`/diagramas/${diagramaId}/versiones/${versionNumber}`)
+      return response.data
+    } catch (error) {
+      console.error('Error obteniendo versión específica:', error)
+      throw new Error(error.response?.data?.detail || 'Error al obtener la versión')
+    }
+  }
+
+  /**
+   * Crea una nueva versión de un diagrama
+   * @param {string} diagramaId - ID del diagrama
+   * @param {Object} versionData - Datos de la nueva versión
+   * @returns {Promise<Object>} Nueva versión creada
+   */
+  async createDiagramVersion(diagramaId, versionData) {
+    try {
+      console.log('Creando nueva versión:', diagramaId, versionData)
+      const response = await api.post(`/diagramas/${diagramaId}/versiones`, versionData)
+      return response.data
+    } catch (error) {
+      console.error('Error creando nueva versión:', error)
+      throw new Error(error.response?.data?.detail || 'Error al crear la nueva versión')
+    }
+  }
+
+  /**
+   * Restaura una versión específica de un diagrama
+   * @param {string} diagramaId - ID del diagrama
+   * @param {number} versionNumber - Número de versión a restaurar
+   * @returns {Promise<Object>} Diagrama actualizado
+   */
+  async restoreDiagramVersion(diagramaId, versionNumber) {
+    try {
+      console.log('Restaurando versión:', diagramaId, versionNumber)
+      const versionData = await this.getDiagramVersion(diagramaId, versionNumber)
+      
+      // Actualizar el diagrama principal con el contenido de la versión
+      const updateData = {
+        codigo_plantuml: versionData.contenido_original,
+        descripcion: `Restaurado desde versión ${versionNumber}`
+      }
+      
+      return await this.updateDiagram(diagramaId, updateData)
+    } catch (error) {
+      console.error('Error restaurando versión:', error)
+      throw new Error(error.response?.data?.detail || 'Error al restaurar la versión')
+    }
+  }
 }
 
 export const diagramService = new DiagramService()
