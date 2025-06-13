@@ -8,20 +8,87 @@ class DiagramService {
    * @param {string} languaje - Lenguaje de programación
    * @param {string} tipo_diagrama - Tipo de diagrama a generar
    * @returns {Promise<Object>} Datos del diagrama generado
-   */
-  async generateDiagram(code, languaje = 'python', tipo_diagrama = 'class') {
+   */  async generateDiagram(codigo, lenguaje = 'csharp', tipo_diagrama = 'clases', proyecto_id = null) {
     try {
-      console.log('Generando diagrama...', { languaje, tipo_diagrama })
-      const response = await api.post('/diagramas/generar', {
-        code,
-        languaje,
-        tipo_diagrama
-      })
+      console.log('Generando diagrama...', { codigo: codigo?.substring(0, 100) + '...', lenguaje, tipo_diagrama, proyecto_id })
+      
+      const requestData = {
+        codigo,
+        lenguaje,
+        diagramas: [tipo_diagrama], // Array de tipos de diagrama
+        proyecto_id: proyecto_id || '1' // ID del proyecto (requerido)
+      }
+      
+      console.log('Datos de la petición:', requestData)
+      
+      const response = await api.post('/diagramas/generar', requestData)
 
-      return response.data
+      console.log('=== RESPUESTA DEL BACKEND EN SERVICIO ===')
+      console.log('Response completo:', response)
+      console.log('Response.data:', response.data)
+      console.log('Tipo de response.data:', typeof response.data)
+      console.log('Es array response.data?:', Array.isArray(response.data))
+      
+      // Manejar diferentes estructuras de respuesta del backend
+      let diagrama = null;
+      
+      if (response.data) {
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          // Si es array, tomar el primer elemento
+          diagrama = response.data[0];
+          console.log('Usando primer elemento del array');
+        } else if (response.data.success && Array.isArray(response.data.data)) {
+          // Si tiene estructura {success: true, data: [...]}
+          diagrama = response.data.data.find(item => 
+            item.tipo_diagrama === tipo_diagrama || 
+            item.tipo_diagrama === 'class' || 
+            item.tipo_diagrama === 'clases'
+          );
+          console.log('Usando estructura con success');
+        } else if (response.data.contenido_plantuml || response.data.codigo_plantuml) {
+          // Si response.data es directamente el diagrama
+          diagrama = response.data;
+          console.log('Usando response.data directamente');
+        }
+      }
+      
+      console.log('=== PROCESANDO DIAGRAMA EN SERVICIO ===')
+      console.log('Diagrama extraído:', diagrama)
+      console.log('diagrama?.contenido_plantuml:', diagrama?.contenido_plantuml)
+      console.log('diagrama?.codigo_plantuml:', diagrama?.codigo_plantuml)
+      
+      const resultado = {
+        codigo_plantuml: diagrama?.contenido_plantuml || diagrama?.codigo_plantuml,
+        nombre: diagrama?.nombre,
+        tipo_diagrama: diagrama?.tipo_diagrama,
+        errores: diagrama?.errores || []
+      }
+      
+      console.log('=== RESULTADO DEL SERVICIO ===')
+      console.log('Resultado final:', resultado)
+      console.log('resultado.codigo_plantuml:', resultado.codigo_plantuml)
+      
+      return resultado
     } catch (error) {
       console.error('Error generando diagrama:', error)
-      throw new Error(error.response?.data?.detail || 'Error al generar el diagrama')
+      console.error('Detalles del error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      })
+      
+      // Extraer el mensaje de error más específico
+      let errorMessage = 'Error al generar el diagrama'
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      throw new Error(errorMessage)
     }
   }
 
@@ -215,15 +282,50 @@ class DiagramService {
    * @param {string} diagramaId - ID del diagrama
    * @param {Object} versionData - Datos de la nueva versión
    * @returns {Promise<Object>} Nueva versión creada
-   */
-  async createDiagramVersion(diagramaId, versionData) {
+   */  async createDiagramVersion(diagramaId, versionData) {
     try {
-      console.log('Creando nueva versión:', diagramaId, versionData)
+      console.log('=== SERVICIO: Creando nueva versión ===')
+      console.log('DiagramaId:', diagramaId)
+      console.log('VersionData keys:', Object.keys(versionData))
+      console.log('VersionData completo:', JSON.stringify(versionData, null, 2))
+      
+      // PRUEBA: Permitir contenido_plantuml temporalmente para testing
+      console.log('🧪 PRUEBA: Enviando contenido_plantuml:', !!versionData.contenido_plantuml)
+      if (versionData.contenido_plantuml) {
+        console.log('🧪 PRUEBA: PlantUML a enviar:', versionData.contenido_plantuml.substring(0, 100) + '...')
+      }
+        // Verificar que todos los campos requeridos estén presentes
+      const requiredFields = ['contenido_original', 'notas_version', 'lenguaje_original', 'creado_por']
+      const missingFields = requiredFields.filter(field => !versionData[field])
+      if (missingFields.length > 0) {
+        console.error('❌ SERVICIO: Faltan campos requeridos:', missingFields)
+        throw new Error(`Faltan campos requeridos: ${missingFields.join(', ')}`)
+      }
+      
+      console.log('✅ SERVICIO: Datos válidos, enviando petición...')
       const response = await api.post(`/diagramas/${diagramaId}/versiones`, versionData)
+      console.log('✅ SERVICIO: Respuesta del backend:', response.data)
       return response.data
     } catch (error) {
-      console.error('Error creando nueva versión:', error)
-      throw new Error(error.response?.data?.detail || 'Error al crear la nueva versión')
+      console.error('❌ SERVICIO: Error creando nueva versión:', error)
+      console.error('❌ SERVICIO: Response data:', error.response?.data)
+      console.error('❌ SERVICIO: Response status:', error.response?.status)
+      
+      // Extraer el mensaje de error específico
+      let errorMessage = 'Error al crear la nueva versión'
+      if (error.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(err => 
+            typeof err === 'string' ? err : err.msg || JSON.stringify(err)
+          ).join(', ')
+        } else {
+          errorMessage = error.response.data.detail
+        }
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      throw new Error(errorMessage)
     }
   }
 
@@ -248,6 +350,34 @@ class DiagramService {
     } catch (error) {
       console.error('Error restaurando versión:', error)
       throw new Error(error.response?.data?.detail || 'Error al restaurar la versión')
+    }
+  }
+
+  /**
+   * Actualiza una versión específica con el PlantUML generado
+   * @param {string} diagramaId - ID del diagrama
+   * @param {number} versionNumber - Número de versión a actualizar
+   * @param {string} plantUMLContent - Contenido PlantUML generado
+   * @returns {Promise<Object>} Versión actualizada
+   */
+  async updateVersionWithPlantUML(diagramaId, versionNumber, plantUMLContent) {
+    try {
+      console.log('=== ACTUALIZANDO VERSIÓN CON PLANTUML ===')
+      console.log('DiagramaId:', diagramaId)
+      console.log('Número de versión:', versionNumber)
+      console.log('PlantUML a guardar:', plantUMLContent?.substring(0, 100) + '...')
+      
+      const updateData = {
+        contenido_plantuml: plantUMLContent
+      }
+      
+      const response = await api.put(`/diagramas/${diagramaId}/versiones/${versionNumber}`, updateData)
+      console.log('✅ Versión actualizada con PlantUML:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ Error actualizando versión con PlantUML:', error)
+      console.error('❌ Response data:', error.response?.data)
+      throw new Error(error.response?.data?.detail || 'Error al actualizar la versión con PlantUML')
     }
   }
 }
