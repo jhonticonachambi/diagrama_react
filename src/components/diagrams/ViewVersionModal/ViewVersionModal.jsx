@@ -30,12 +30,13 @@ const ViewVersionModal = ({ isOpen, onClose, diagramId, versionNumber, diagramNa
       setIsLoading(false)
     }
   }
+  
   const generatePreviewImage = () => {
-    if (!versionData?.contenido_original) return null
+    if (!versionData?.contenido_plantuml) return null
     
     try {
-      // Procesar el contenido antes de generar la imagen
-      const processedContent = processPlantUMLContent(versionData.contenido_original)
+      // Procesar el contenido PlantUML antes de generar la imagen
+      const processedContent = processPlantUMLContent(versionData.contenido_plantuml)
       const imageUrl = diagramService.generatePlantUmlImageUrl(processedContent)
       return imageUrl
     } catch (error) {
@@ -57,9 +58,8 @@ const ViewVersionModal = ({ isOpen, onClose, diagramId, versionNumber, diagramNa
       setIsGenerating(false)
     }
   }
-  
-  useEffect(() => {
-    if (versionData?.contenido_original) {
+    useEffect(() => {
+    if (versionData?.contenido_plantuml) {
       handleGenerate()
     }
   }, [versionData])
