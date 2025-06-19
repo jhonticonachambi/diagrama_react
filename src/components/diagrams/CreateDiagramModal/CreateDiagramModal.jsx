@@ -3,6 +3,7 @@ import Button from '../../common/Button/Button';
 import { diagramService } from '../../../services/diagramService';
 import { API_ROUTES } from '../../../config/api';
 import AuthContext from '../../../context/AuthContext';
+import { DIAGRAM_TYPES, DIAGRAM_TYPE_LABELS, PROGRAMMING_LANGUAGES, LANGUAGE_LABELS } from '../../../utils/constants';
 import axios from 'axios';
 import { encode } from 'plantuml-encoder';
 
@@ -11,13 +12,12 @@ const TABS = {
   CODE: 'code',
 };
 
-const CreateDiagramModal = ({ isOpen, onClose, projectId, onDiagramCreated }) => {
-  const [formData, setFormData] = useState({
+const CreateDiagramModal = ({ isOpen, onClose, projectId, onDiagramCreated }) => {  const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    tipo_diagrama: 'class',
+    tipo_diagrama: DIAGRAM_TYPES.CLASS,
     codigo_fuente: '',
-    lenguaje: 'csharp',
+    lenguaje: PROGRAMMING_LANGUAGES.CSHARP,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -178,29 +178,30 @@ const CreateDiagramModal = ({ isOpen, onClose, projectId, onDiagramCreated }) =>
               <div className="grid grid-cols-2 gap-6 mt-4">
                 {/* Segunda fila: Tipo de Diagrama y Lenguaje */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Diagrama</label>
-                  <select
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Diagrama</label>                  <select
                     name="tipo_diagrama"
                     value={formData.tipo_diagrama}
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   >
-                    <option value="class">Diagrama de Clases</option>
-                    <option value="sequence">Diagrama de Secuencia</option>
-                    <option value="activity">Diagrama de Actividad</option>
+                    <option value={DIAGRAM_TYPES.CLASS}>{DIAGRAM_TYPE_LABELS[DIAGRAM_TYPES.CLASS]}</option>
+                    <option value={DIAGRAM_TYPES.SEQUENCE}>{DIAGRAM_TYPE_LABELS[DIAGRAM_TYPES.SEQUENCE]}</option>
+                    <option value={DIAGRAM_TYPES.USECASE}>{DIAGRAM_TYPE_LABELS[DIAGRAM_TYPES.USECASE]}</option>
+                    <option value={DIAGRAM_TYPES.ACTIVITY}>{DIAGRAM_TYPE_LABELS[DIAGRAM_TYPES.ACTIVITY]}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Lenguaje</label>
-                  <select
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lenguaje</label>                  <select
                     name="lenguaje"
                     value={formData.lenguaje}
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   >
-                    <option value="csharp">C#</option>
-                    <option value="java">Java</option>
-                    <option value="python">Python</option>
+                    <option value={PROGRAMMING_LANGUAGES.CSHARP}>{LANGUAGE_LABELS[PROGRAMMING_LANGUAGES.CSHARP]}</option>
+                    <option value={PROGRAMMING_LANGUAGES.JAVA}>{LANGUAGE_LABELS[PROGRAMMING_LANGUAGES.JAVA]}</option>
+                    <option value={PROGRAMMING_LANGUAGES.PYTHON}>{LANGUAGE_LABELS[PROGRAMMING_LANGUAGES.PYTHON]}</option>
+                    <option value={PROGRAMMING_LANGUAGES.PHP}>{LANGUAGE_LABELS[PROGRAMMING_LANGUAGES.PHP]}</option>
+                    <option value={PROGRAMMING_LANGUAGES.JAVASCRIPT}>{LANGUAGE_LABELS[PROGRAMMING_LANGUAGES.JAVASCRIPT]}</option>
                   </select>
                 </div>
               </div>

@@ -46,3 +46,33 @@ export const STORAGE_KEYS = {
   THEME: 'theme',
   SIDEBAR_STATE: 'sidebarState'
 };
+
+export const DIAGRAM_TYPES = {
+  CLASS: 'class',
+  SEQUENCE: 'sequence', 
+  USECASE: 'use_case',
+  ACTIVITY: 'activity'
+};
+
+export const DIAGRAM_TYPE_LABELS = {
+  [DIAGRAM_TYPES.CLASS]: 'Diagrama de Clases',
+  [DIAGRAM_TYPES.SEQUENCE]: 'Diagrama de Secuencia',
+  [DIAGRAM_TYPES.USECASE]: 'Diagrama de Casos de Uso',
+  [DIAGRAM_TYPES.ACTIVITY]: 'Diagrama de Actividad'
+};
+
+export const PROGRAMMING_LANGUAGES = {
+  CSHARP: 'csharp',
+  JAVA: 'java',
+  PYTHON: 'python',
+  PHP: 'php',
+  JAVASCRIPT: 'javascript'
+};
+
+export const LANGUAGE_LABELS = {
+  [PROGRAMMING_LANGUAGES.CSHARP]: 'C#',
+  [PROGRAMMING_LANGUAGES.JAVA]: 'Java',
+  [PROGRAMMING_LANGUAGES.PYTHON]: 'Python',
+  [PROGRAMMING_LANGUAGES.PHP]: 'PHP',
+  [PROGRAMMING_LANGUAGES.JAVASCRIPT]: 'JavaScript'
+};
