@@ -67,13 +67,14 @@
 
 import { Routes, Route, Navigate } from "react-router-dom"
 import { useAuth } from "./hooks/useAuth"
-import Loading from "./components/common/Loading/Loading"
+import Loading from "./components/common/Loading"
 
 
 // Pages
 import Login from "./pages/auth/Login/Login"
 import Register from "./pages/auth/Register/Register"
 import Dashboard from "./pages/dashboard/Dashboard/Dashboard"
+import UMLGenerator from "./pages/UMLGenerator/UMLGenerator"
 import Profile from "./pages/dashboard/Profile/Profile"
 import Settings from "./pages/dashboard/Settings/Settings"
 import DiagramView from "./pages/dashboard/DiagramView/DiagramView"
@@ -99,7 +100,8 @@ const App = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<UMLGenerator />} />
+      <Route path="/uml-generator" element={<UMLGenerator />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />      {/* Protected Dashboard Routes */}
       <Route
