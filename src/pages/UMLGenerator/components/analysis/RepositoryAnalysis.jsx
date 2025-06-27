@@ -5,6 +5,7 @@ import Loading from '../../../../components/common/Loading';
 import DiagramViewer from '../diagrams/DiagramViewer';
 import { RepositoryService } from '../../../../services/repositoryService';
 import { ZipUploadService } from '../../../../services/zipUploadService';
+import { trackDiagramGeneration, trackError, trackUserInteraction } from '../../../../utils/analytics';
 
 const RepositoryAnalysis = ({ analysisData, onGenerateUML, onReset, onError }) => {
   const [generatedDiagrams, setGeneratedDiagrams] = useState(null);
@@ -17,6 +18,9 @@ const RepositoryAnalysis = ({ analysisData, onGenerateUML, onReset, onError }) =
       setError('Por favor selecciona al menos un tipo de diagrama');
       return;
     }
+
+    // Track user interaction
+    trackUserInteraction('generate_diagrams_clicked', `types_${selectedDiagramTypes.join('_')}`);
 
     setIsGenerating(true);
     setError(null); // Limpiar errores previos
@@ -34,7 +38,9 @@ const RepositoryAnalysis = ({ analysisData, onGenerateUML, onReset, onError }) =
       console.log('Diagram Types:', selectedDiagramTypes);
       
       if (!repoId) {
-        throw new Error('ID del repositorio no está disponible');
+        const errorMsg = 'ID del repositorio no está disponible';
+        trackError('missing_repo_id', `Source: ${sourceType}, Available keys: ${Object.keys(analysisData).join(', ')}`);
+        throw new Error(errorMsg);
       }
       
       let result;
@@ -53,11 +59,21 @@ const RepositoryAnalysis = ({ analysisData, onGenerateUML, onReset, onError }) =
         );
       }
       
+      // Track successful diagram generation
+      if (result.generated_diagrams) {
+        result.generated_diagrams.forEach(diagram => {
+          trackDiagramGeneration(diagram.type, sourceType, diagram.status === 'success');
+        });
+      }
+      
       setGeneratedDiagrams(result);
       onGenerateUML(result);
       
     } catch (error) {
       console.error('Error al generar diagramas:', error);
+      
+      // Track error with detailed information
+      trackError('diagram_generation_failed', `${sourceType}: ${error.message}`);
       
       // Mostrar error específico sin resetear todo el estado
       let errorMessage = 'Error desconocido al generar diagramas';

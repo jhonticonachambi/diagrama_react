@@ -4,6 +4,7 @@ import Button from '../../../../components/common/Button';
 import Loading from '../../../../components/common/Loading';
 import PlantUMLPreview from './PlantUMLPreview';
 import { RepositoryService } from '../../../../services/repositoryService';
+import { trackDiagramDownload, trackUserInteraction, trackError } from '../../../../utils/analytics';
 
 const DiagramViewer = ({ analysisData, generatedDiagrams, onError }) => {
   const [diagramDetails, setDiagramDetails] = useState([]);
@@ -82,11 +83,15 @@ const DiagramViewer = ({ analysisData, generatedDiagrams, onError }) => {
   };
 
   const handleViewDiagram = (diagram) => {
+    trackUserInteraction('view_diagram', diagram.type);
     setSelectedDiagram(diagram);
     setShowPreview(true);
   };
 
   const handleDownloadDiagram = async (diagram, format = 'puml') => {
+    // Track download attempt
+    trackDiagramDownload(diagram.type, format);
+    
     try {
       let content = '';
       let filename = '';
@@ -103,6 +108,7 @@ const DiagramViewer = ({ analysisData, generatedDiagrams, onError }) => {
       }
 
       if (!content) {
+        trackError('download_failed', `No content available for ${diagram.type}`);
         onError('No hay contenido disponible para descargar');
         return;
       }
@@ -119,11 +125,13 @@ const DiagramViewer = ({ analysisData, generatedDiagrams, onError }) => {
       window.URL.revokeObjectURL(url);
 
     } catch (error) {
+      trackError('download_failed', `${diagram.type}: ${error.message}`);
       onError(`Error al descargar diagrama: ${error.message}`);
     }
   };
 
   const handleGenerateDocumentation = (diagram) => {
+    trackUserInteraction('generate_documentation_clicked', diagram.type);
     // Placeholder para generar documentación
     console.log('Generando documentación para:', diagram.type);
     alert('Función de documentación próximamente disponible');

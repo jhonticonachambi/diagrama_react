@@ -65,10 +65,11 @@
 
 "use client"
 
+import { useEffect } from "react"
 import { Routes, Route, Navigate } from "react-router-dom"
 import { useAuth } from "./hooks/useAuth"
 import Loading from "./components/common/Loading"
-
+import { initGA, trackPageView } from "./utils/analytics"
 
 // Pages
 import Login from "./pages/auth/Login/Login"
@@ -89,6 +90,12 @@ import ProtectedRoute from "./components/common/ProtectedRoute/ProtectedRoute"
 
 const App = () => {
   const { isLoading } = useAuth()
+
+  // Inicializar Google Analytics
+  useEffect(() => {
+    initGA();
+    trackPageView('/', 'UML Generator - Home');
+  }, [])
 
   if (isLoading) {
     return <Loading />

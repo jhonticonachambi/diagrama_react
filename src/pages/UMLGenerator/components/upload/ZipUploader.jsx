@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '../../../../components/common/Button';
 import { ZipUploadService } from '../../../../services/zipUploadService';
+import { trackZipUpload, trackRepositoryAnalysis, trackError, trackUserInteraction } from '../../../../utils/analytics';
 
 const ZipUploader = ({ onUploadSuccess, onUploadError }) => {
   const [file, setFile] = useState(null);
@@ -63,6 +64,10 @@ const ZipUploader = ({ onUploadSuccess, onUploadError }) => {
       return;
     }
 
+    // Track upload attempt
+    trackZipUpload(file.name, file.size);
+    trackUserInteraction('zip_upload_started', file.name);
+
     setIsUploading(true);
     
     try {
@@ -73,6 +78,9 @@ const ZipUploader = ({ onUploadSuccess, onUploadError }) => {
       // 2. Analizar el proyecto automáticamente
       const analysisResult = await ZipUploadService.analyzeZipProject(uploadResult.projectId);
       console.log('Resultado del análisis ZIP:', analysisResult);
+
+      // Track successful analysis
+      trackRepositoryAnalysis('zip', analysisResult.total_files || 0);
 
       // 3. Combinar los resultados
       const combinedResult = {
@@ -94,6 +102,7 @@ const ZipUploader = ({ onUploadSuccess, onUploadError }) => {
       
     } catch (error) {
       console.error('Error uploading file:', error);
+      trackError('zip_upload_failed', `${file.name}: ${error.message}`);
       onUploadError(error.message);
     } finally {
       setIsUploading(false);
