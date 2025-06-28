@@ -273,38 +273,47 @@ export class RepositoryService {
     try {
       // ✅ Para GitHub
       if (sourceType === 'github') {
+        const requestBody = {
+          repo_id: repoId,
+          include_external_deps: options.includeExternalDeps ?? true,
+          max_depth: options.maxDepth ?? null
+        };
+        
+        console.log('🐙 Generating GitHub component diagram:', { repoId, url: `${API_BASE_URL}/api/generate-component-diagram` });
+        
         const response = await fetch(`${API_BASE_URL}/api/generate-component-diagram`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            repo_id: repoId,
-            include_external_deps: options.includeExternalDeps ?? true,
-            max_depth: options.maxDepth ?? null
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('❌ GitHub component diagram error:', response.status, errorData);
           throw new Error(errorData.detail || `Error ${response.status}`);
         }
 
-        return await response.json();
+        const result = await response.json();
+        console.log('✅ GitHub component diagram success');
+        return result;
       }
 
       // ✅ Para ZIP
       if (sourceType === 'zip' || sourceType === 'zip_upload') {
+        const requestBody = {
+          project_id: repoId,
+          include_external_deps: options.includeExternalDeps ?? true,
+          max_depth: options.maxDepth ?? null
+        };
+        
         const response = await fetch(`${API_BASE_URL}/api/generate-zip-component-diagram`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            project_id: repoId,
-            include_external_deps: options.includeExternalDeps ?? true,
-            max_depth: options.maxDepth ?? null
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -317,6 +326,7 @@ export class RepositoryService {
 
       throw new Error(`Tipo de fuente no soportado: ${sourceType}`);
     } catch (error) {
+      console.error('❌ Error en generateComponentDiagram:', error.message);
       throw new Error(`Error al generar diagrama de componentes: ${error.message}`);
     }
   }
@@ -464,6 +474,7 @@ export class RepositoryService {
    */
   static async getDiagram(diagramId) {
     try {
+      console.log(`Solicitando diagrama con ID: ${diagramId}`);
       const response = await fetch(`${API_BASE_URL}/api/diagrams/${diagramId}`, {
         method: 'GET',
         headers: {
@@ -472,6 +483,7 @@ export class RepositoryService {
       });
 
       if (!response.ok) {
+        console.error(`Error en la respuesta del servidor para diagramId: ${diagramId}`, response);
         let errorMessage = `Error HTTP: ${response.status}`;
         try {
           const errorData = await response.json();
@@ -488,6 +500,7 @@ export class RepositoryService {
 
       return await response.json();
     } catch (error) {
+      console.error(`Error al obtener diagrama con ID: ${diagramId}`, error);
       throw new Error(`Error al obtener diagrama: ${error.message}`);
     }
   }

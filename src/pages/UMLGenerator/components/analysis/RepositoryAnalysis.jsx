@@ -23,19 +23,16 @@ const RepositoryAnalysis = ({ analysisData, onGenerateUML, onReset, onError }) =
     trackUserInteraction('generate_diagrams_clicked', `types_${selectedDiagramTypes.join('_')}`);
 
     setIsGenerating(true);
-    setError(null); // Limpiar errores previos
+    setError(null);
     try {
       // Determinar el tipo de fuente desde analysisData
-      const sourceType = analysisData.sourceType || analysisData.source_type || 'zip';
-      
-      // Debug logs
-      console.log('Datos de análisis:', analysisData);
+      const sourceType = analysisData?.sourceType || analysisData?.source_type || 'zip';
+      if (!sourceType) {
+        throw new Error('sourceType no está definido');
+      }
       
       // ✅ Obtener el ID correcto según el tipo de fuente
       const repoId = analysisData.repoId || analysisData.projectId || analysisData.id;
-      console.log('Repo ID:', repoId);
-      console.log('Source Type:', sourceType);
-      console.log('Diagram Types:', selectedDiagramTypes);
       
       if (!repoId) {
         const errorMsg = 'ID del repositorio no está disponible';
@@ -310,7 +307,12 @@ const RepositoryAnalysis = ({ analysisData, onGenerateUML, onReset, onError }) =
               </h3>
               <div className="mt-1 text-sm text-blue-700">
                 <p>Analizando código y creando diagramas: <strong>{selectedDiagramTypes.join(', ')}</strong></p>
-                <p className="mt-1">⚡ Generando en paralelo para mayor velocidad. Esto puede tomar unos momentos.</p>
+                {analysisData.sourceType === 'github' ? (
+                  <p className="mt-1">🐙 <strong>GitHub:</strong> Analizando repositorio remoto. Tiempo estimado: 15-30 segundos.</p>
+                ) : (
+                  <p className="mt-1">📦 <strong>ZIP:</strong> Procesando archivos locales. Tiempo estimado: 5-15 segundos.</p>
+                )}
+                <p className="mt-1 text-xs">💡 Los diagramas de componentes pueden tomar más tiempo en repositorios grandes.</p>
               </div>
             </div>
           </div>

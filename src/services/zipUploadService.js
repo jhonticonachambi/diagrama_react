@@ -150,6 +150,12 @@ export class ZipUploadService {
    */
   static async generateZipComponentDiagram(projectId, includeExternalDeps = true, maxDepth = null) {
     try {
+      if (!projectId) {
+        throw new Error('El projectId es requerido para generar el diagrama de componentes.');
+      }
+
+      console.log(`Enviando solicitud para generar diagrama de componentes con projectId: ${projectId}, includeExternalDeps: ${includeExternalDeps}, maxDepth: ${maxDepth}`);
+
       const response = await fetch(`${API_BASE_URL}/api/generate-zip-component-diagram`, {
         method: 'POST',
         headers: {
@@ -158,17 +164,19 @@ export class ZipUploadService {
         body: JSON.stringify({
           project_id: projectId,
           include_external_deps: includeExternalDeps,
-          max_depth: maxDepth
+          max_depth: maxDepth || 3 // Valor predeterminado si maxDepth es null
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error en la respuesta del backend:', errorData);
         throw new Error(errorData.detail || `Error ${response.status}`);
       }
 
       return await response.json();
     } catch (error) {
+      console.error('Error al generar diagrama de componentes:', error);
       throw new Error(`Error al generar diagrama de componentes: ${error.message}`);
     }
   }
