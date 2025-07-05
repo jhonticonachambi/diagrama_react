@@ -154,7 +154,7 @@ const ZipUploader = ({ onUploadSuccess, onUploadError }) => {
                 </p>
               </div>
               <div className="text-xs text-gray-500">
-                Archivos permitidos: .zip (máximo 50MB)
+                Archivos permitidos: .zip (máximo 100MB)
               </div>
             </>
           ) : (
